@@ -68,8 +68,8 @@ public class MainActivity extends BaseActivity {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data, @NonNull ComponentCaller caller) {
-        super.onActivityResult(requestCode, resultCode, data, caller);
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if(requestCode==RESULT_CODE_DATA && requestCode==RESULT_OK){
             User user = new User();
             user.setName(data.getStringExtra("USERNAME"));

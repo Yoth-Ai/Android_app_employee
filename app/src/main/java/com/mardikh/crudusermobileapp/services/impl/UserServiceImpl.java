@@ -97,4 +97,9 @@ public class UserServiceImpl implements UserService {
         }
         return null;
     }
+
+    @Override
+    public void deleteUser(int userId) {
+        userList.removeIf(user -> user.getId() == userId);
+    }
 }

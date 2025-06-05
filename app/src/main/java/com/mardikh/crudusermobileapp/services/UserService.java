@@ -15,4 +15,6 @@ public interface UserService {
     List<Role> getAllRoles();
 
     Role getRoleById(int roleId);
+
+    void deleteUser(int userId);
 }

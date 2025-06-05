@@ -29,6 +29,8 @@ public class UserFormMainActivity extends BaseActivity {
     private EditText etUsername, etEmail;
     private RadioButton rbMale, rbFemale;
     private Button btnCreate, btnBack;
+    private boolean isEditMode = false;
+    private int currentUserId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,26 +73,53 @@ public class UserFormMainActivity extends BaseActivity {
     }
     private void onCreateUser(){
         String username = etUsername.getText().toString().trim();
-        String email = etEmail.getText().toString();
-        String gender = rbMale.isActivated() ? "Male" : "Female";
+        String email = etEmail.getText().toString().trim(); // Also trim email
+        String gender = rbMale.isChecked() ? "Male" : "Female"; // Use isChecked() for RadioButton
+
         if (username.isEmpty()){
             showToastMessage("Please enter username");
-            etUsername.setFocusable(true);
+            etUsername.requestFocus(); // Use requestFocus()
             return;
         }
         if (email.isEmpty()){
             showToastMessage("Please enter email");
-            etEmail.setFocusable(true);
+            etEmail.requestFocus(); // Use requestFocus()
             return;
         }
+        // Ensure a role is selected
+        if (selectRole == null) {
+            showToastMessage("Please select a role");
+            // Potentially open the spinner or highlight it
+            return;
+        }
+
+        com.mardikh.crudusermobileapp.models.User user = new com.mardikh.crudusermobileapp.models.User();
+        user.setName(username);
+        user.setEmail(email);
+        user.setGender(gender);
+        user.setRole(selectRole);
+
         Intent intent = new Intent();
-        intent.putExtra("USERNAME", username);
-        intent.putExtra("EMAIL", email);
-        intent.putExtra("GENDER", gender);
-        intent.putExtra("ROLE_ID", selectRole.getId());
+        if (isEditMode) {
+            user.setId(currentUserId);
+            userService.updateUser(user);
+            intent.putExtra("USER_ID", currentUserId); // Pass back the ID of the updated user
+            intent.putExtra("ACTION_TYPE", "UPDATE");
+        } else {
+            userService.insertUser(user);
+            // For a new user, ID is set by UserServiceImpl, so we don't set it here.
+            // The existing extras are fine for indicating what was added.
+            intent.putExtra("USERNAME", username);
+            intent.putExtra("EMAIL", email);
+            intent.putExtra("GENDER", gender);
+            intent.putExtra("ROLE_ID", selectRole.getId());
+            intent.putExtra("ACTION_TYPE", "CREATE");
+        }
+
         setResult(RESULT_OK, intent);
         finish();
     }
+
     private void initView(){
         spinnerRole = findViewById(R.id.spinnerRole);
         etUsername = findViewById(R.id.etUsername);
@@ -102,8 +131,47 @@ public class UserFormMainActivity extends BaseActivity {
         rbMale.setChecked(true);
         Intent intent = getIntent();
         int id = intent.getIntExtra("ID", 0);
-        if (id==0){
+        if (id != 0){
+            // Ensure userService is initialized before calling its methods
+            if (userService == null) {
+                userService = new UserServiceImpl();
+            }
+            // Ensure roles are loaded for spinner and for finding role by ID
+            if (userService.getAllRoles().isEmpty()) {
+                // This typically shouldn't happen if getAllRoles is called in onCreate
+                // but as a safeguard:
+                customRoleAdapter = new CustomRoleAdapter(this, userService.getAllRoles());
+                spinnerRole.setAdapter(customRoleAdapter);
+            }
 
+            com.mardikh.crudusermobileapp.models.User user = userService.getUserById(id);
+            if (user != null) {
+                isEditMode = true;
+                currentUserId = user.getId(); // Or currentUserId = id;
+                etUsername.setText(user.getName());
+                etEmail.setText(user.getEmail());
+
+                if (user.getGender().equalsIgnoreCase("Male")) {
+                    rbMale.setChecked(true);
+                } else if (user.getGender().equalsIgnoreCase("Female")) {
+                    rbFemale.setChecked(true);
+                }
+
+                // Set spinner selection
+                if (user.getRole() != null) {
+                    int rolePosition = -1;
+                    for (int i = 0; i < userService.getAllRoles().size(); i++) {
+                        if (userService.getAllRoles().get(i).getId() == user.getRole().getId()) {
+                            rolePosition = i;
+                            break;
+                        }
+                    }
+                    if (rolePosition != -1) {
+                        spinnerRole.setSelection(rolePosition);
+                    }
+                }
+                btnCreate.setText("Update");
+            }
         }
     }
 }

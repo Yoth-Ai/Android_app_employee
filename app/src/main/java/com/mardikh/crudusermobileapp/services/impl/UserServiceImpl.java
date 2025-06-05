@@ -31,14 +31,34 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void insertUser(User user) {
-        user.setId(userList.size()+1);
+        if (userList.isEmpty()) {
+            user.setId(1);
+        } else {
+            int maxId = 0;
+            for (User existingUser : userList) {
+                if (existingUser.getId() > maxId) {
+                    maxId = existingUser.getId();
+                }
+            }
+            user.setId(maxId + 1);
+        }
         userList.add(user);
-
     }
 
     @Override
     public void updateUser(User user) {
-
+        if (roleList.isEmpty()) {
+            getAllRoles();
+        }
+        for (int i = 0; i < userList.size(); i++) {
+            if (userList.get(i).getId() == user.getId()) {
+                userList.get(i).setName(user.getName());
+                userList.get(i).setEmail(user.getEmail());
+                userList.get(i).setGender(user.getGender());
+                userList.get(i).setRole(getRoleById(user.getRole().getId()));
+                break;
+            }
+        }
     }
 
     @Override

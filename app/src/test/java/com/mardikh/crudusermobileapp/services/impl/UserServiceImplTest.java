@@ -214,4 +214,64 @@ public class UserServiceImplTest {
         // Optionally, verify that no user with ID 999 was added
         assertNull("User with ID 999 should not exist in the list", userService.getUserById(999));
     }
+
+    // --- Tests for deleteUser ---
+
+    @Test
+    public void testDeleteUser_existingUser() {
+        // Setup: Ensure roles are available and add a user
+        userService.getAllRoles(); // Ensures roles are loaded (handled by setUp too)
+        Role role = userService.getRoleById(1); // Get Admin role
+        assertNotNull("Role should not be null for user creation", role);
+
+        User userToDelete = new User(0, "Deleter", "delete@me.com", "Male", role);
+        userService.insertUser(userToDelete);
+        int userIdToDelete = userToDelete.getId();
+        assertNotEquals("User ID should be assigned", 0, userIdToDelete);
+
+        int initialSize = userService.getAllUser().size();
+
+        // Action: Delete the user
+        userService.deleteUser(userIdToDelete);
+
+        // Assertions
+        assertNull("Deleted user should not be found by ID", userService.getUserById(userIdToDelete));
+        assertEquals("User list size should decrease by 1", initialSize - 1, userService.getAllUser().size());
+    }
+
+    @Test
+    public void testDeleteUser_nonExistentUser() {
+        // Setup: Ensure roles are available and add some users
+        userService.getAllRoles();
+        Role role = userService.getRoleById(1);
+        assertNotNull(role);
+
+        userService.insertUser(new User(0, "User A", "a@a.com", "Male", role));
+        userService.insertUser(new User(0, "User B", "b@b.com", "Female", role));
+
+        int initialSize = userService.getAllUser().size();
+        int nonExistentId = 999; // An ID that is unlikely to exist
+
+        // Action: Attempt to delete a non-existent user
+        userService.deleteUser(nonExistentId);
+
+        // Assertions
+        assertEquals("User list size should remain unchanged", initialSize, userService.getAllUser().size());
+        // No specific exception expected, just no change.
+    }
+
+    @Test
+    public void testDeleteUser_emptyList() {
+        // Setup: Ensure user list is empty (setUp should handle this)
+        assertEquals("User list should be empty at the start of this test", 0, userService.getAllUser().size());
+
+        int arbitraryId = 1;
+
+        // Action: Attempt to delete from an empty list
+        userService.deleteUser(arbitraryId);
+
+        // Assertions
+        assertEquals("User list should remain empty", 0, userService.getAllUser().size());
+        // No exception expected.
+    }
 }

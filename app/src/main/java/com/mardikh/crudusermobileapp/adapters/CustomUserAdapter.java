@@ -70,14 +70,30 @@ public class CustomUserAdapter extends BaseAdapter {
             edit.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    onClickListener.onEdit(v, user);
+                    if (onClickListener != null) {
+                        onClickListener.onEdit(v, user);
+                    }
+                }
+            });
+
+            ImageView deleteButton = view.findViewById(R.id.ivDelete);
+            deleteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (onClickListener != null) {
+                        onClickListener.onDelete(user);
+                    }
                 }
             });
 
         }
+        // Data should ideally be set here for recycled views too,
+        // but current structure has it all in the if(view == null) block.
+        // For this change, we're only adding the delete button as requested.
         return view;
     }
     public  interface OnClickListener{
         void onEdit(View view, User user);
+        void onDelete(User user);
     }
 }

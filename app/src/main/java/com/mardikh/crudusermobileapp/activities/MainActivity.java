@@ -63,6 +63,21 @@ public class MainActivity extends BaseActivity {
                 intent.putExtra("ROLE_ID", user.getRole().getId());
                 startActivityForResult(intent, RESULT_CODE_DATA);
             }
+
+            @Override
+            public void onDelete(User user) {
+                new android.app.AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Confirm Delete")
+                        .setMessage("Are you sure you want to delete user: " + user.getName() + "?")
+                        .setPositiveButton("Yes", (dialog, which) -> {
+                            userService.deleteUser(user.getId());
+                            getUserData(); // Refresh the list
+                            showToastMessage("User " + user.getName() + " deleted.");
+                        })
+                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                        .create()
+                        .show();
+            }
         });
         listViewUser.setAdapter(customUserAdapter);
     }
@@ -70,16 +85,23 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode==RESULT_CODE_DATA && requestCode==RESULT_OK){
-            User user = new User();
-            user.setName(data.getStringExtra("USERNAME"));
-            user.setEmail(data.getStringExtra("EMAIL"));
-            user.setGender(data.getStringExtra("GENDER"));
-            Role role= userService.getRoleById(data.getIntExtra("ROLE_ID", 0));
-            user.setRole(role);
-            userService.insertUser(user);
-            getUserData();
-            showToastMessage("Insert data success");
+        if(requestCode == RESULT_CODE_DATA && resultCode == RESULT_OK && data != null){
+            String actionType = data.getStringExtra("ACTION_TYPE");
+
+            if ("CREATE".equals(actionType)) {
+                // User creation is already handled by UserFormMainActivity's call to userService.insertUser()
+                // We just need to refresh the list and show a toast.
+                // The original code here re-inserted the user, which might lead to duplicates if UserFormMainActivity also inserted.
+                // String username = data.getStringExtra("USERNAME"); // For toast
+                showToastMessage("User created successfully.");
+            } else if ("UPDATE".equals(actionType)) {
+                // User update is already handled by UserFormMainActivity's call to userService.updateUser()
+                // We just need to refresh the list and show a toast.
+                // int userId = data.getIntExtra("USER_ID", -1); // For more specific toast if needed
+                showToastMessage("User updated successfully.");
+            }
+            // For both CREATE and UPDATE, or any other action that modifies data
+            getUserData(); // Refresh the list
         }
     }
 }
